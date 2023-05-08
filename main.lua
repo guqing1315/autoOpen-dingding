@@ -3,14 +3,24 @@ w, h = getScreenSize()
 
 ------需要根据个人信息修改
 --钉钉bundleID
-bundleID="com.laiwang.DingTalk" 
+bundleID = "com.laiwang.DingTalk"
 --钉钉账号
-user="XXXXXXXXXXX"
+user = "XXXXXXX"
 --钉钉密码
-pwd="XXXXXXXX"
+pwd = "XXXXX"
+
+---------------------mysql数据库信息------------------
+isMysql = true --是否使用数据库   flase--不使用数据库
+--数据库名称
+name = "XXXXXXX"
+username = "XXX"
+password = "XXXXXXXX"
+IP = "XXXXXXXXxX"
+port = "XXXxxXX"
 ----------------------------------------函数-------------------------------------------------------------------------
 --唤醒屏幕调转到后台
 function startON()
+    startCurrent_text = os.date("%Y-%m-%d %X", getNetTime()) --格式化时间
     --如果要在设备自启动时解锁屏幕直接使用 unlockDevice 函数即可
     sysver = getOSVer()
     --获取系统版本
@@ -67,6 +77,7 @@ function closeDingding()
     if flag == 1 then
         --使用此函数后在后台仍可看到应用程序图标属正常现象，实际进程已不在后台
         closeApp(bundleID)
+        endCurrent_text = os.date("%Y-%m-%d %X", getNetTime()) --格式化时间
         toast("钉钉已关闭!", 5)
     end
 end
@@ -120,6 +131,34 @@ function inputPwd()
     end
 end
 
+function insertMysqlLog()
+    if isMysql then
+        local luasql = require "luasql.mysql"
+        -- 创建环境对象
+        mysql = luasql.mysql()
+        -- 连接数据库
+        conn, msg = mysql:connect(name,username,password,IP,port)
+        if conn then
+            -- 数据库操作语句
+             startCurrent_text = [[']]..startCurrent_text.. [[']] 
+             endCurrent_text =  [[']]..endCurrent_text.. [[']] 
+            sqls = "insert into run_time_log(start_time,end_time,status) values("..startCurrent_text..","..endCurrent_text..",'1')"
+            toast(sqls, 5)
+            conn:execute(
+                sqls
+            )
+            --关闭数据库
+            conn:close()
+            --断开 mysql 库
+            mysql:close()
+            toast("运行时间日志放入数据库!", 5)
+        else
+            toast("连接失败：" .. msg)
+        end
+    else
+        toast("不使用数据库!")
+    end
+end
 ---------------------------------------函数调用---------------------------------------------------------------------------
 
 startON()
@@ -131,3 +170,4 @@ mSleep(5000)
 inputPwd()
 mSleep(60 * 1000)
 closeDingding()
+insertMysqlLog()
